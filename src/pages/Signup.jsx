@@ -1,36 +1,54 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
+import { useUserContext } from '../contexts/userContext';
 import masterApi from '../apis/masterApi';
 import FormInput from '../components/FormInput';
 import whiteLogoImg from '../assets/images/logo/logo-white.png';
 import backgroundDark from '../assets/images/others/bg-dark.jpg';
 
 const Signup = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { setUser } = useUserContext();
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordConfirm, setPasswordConfirm] = useState('');
   const [signupStatus, setSignupStatus] = useState('');
   const [error, setError] = useState('');
 
   const handleSigninSubmit = async e => {
-    e.preventeDefault();
+    e.preventDefault();
+
+    if (!name || !email || !phone || !password || !passwordConfirm) {
+      return toast.error('All fields are required!');
+    }
 
     try {
       setSignupStatus('loading');
-      const { data } = await masterApi.post('/users/signup', {
-        email,
-        phone,
-        password,
-        confirmPassword,
-      });
 
+      const { data } = await masterApi.post('/users/signup', {
+        // await masterApi.post('/users/signup', {
+        name,
+        email,
+        password,
+        passwordConfirm,
+        phone,
+      });
+      setUser(data.data.user);
       setSignupStatus('success');
+
+      const redirectTo = searchParams.get('redirectTo') || '/';
+      navigate(redirectTo, { replace: true });
     } catch (err) {
       console.log(err);
       setSignupStatus('error');
+
+      toast.error(err.response.data.message);
     }
   };
 
@@ -122,7 +140,7 @@ const Signup = () => {
                       <div class="form-group input-affix flex-column">
                         <FormInput
                           type="password"
-                          value={confirmPassword}
+                          value={passwordConfirm}
                           required={true}
                           onError={setError}
                           shouldMatch={{
@@ -130,7 +148,7 @@ const Signup = () => {
                             error: "Passwords don't match",
                           }}
                           prefixIcon="lock"
-                          onChange={e => setConfirmPassword(e.target.value)}
+                          onChange={e => setPasswordConfirm(e.target.value)}
                           placeholder="Please confirm your password"
                         />
                       </div>

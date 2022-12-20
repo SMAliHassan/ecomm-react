@@ -1,89 +1,119 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import Popup from 'reactjs-popup';
 
+import { useUserContext } from '../../contexts/userContext';
+import masterApi from '../../apis/masterApi';
+import Loader from '../../components/Loader';
 import Dropdown from '../../components/Dropdown';
 import logo from '../../assets/images/logo/logo.png';
 import logoFold from '../../assets/images/logo/logo-fold.png';
 import avatar from '../../assets/images/avatars/general.png';
 
+const dropdownMenu = [
+  {
+    title: 'Master Product',
+    icon: 'shopping-bag',
+    items: [
+      {
+        page: 'product-local',
+        title: 'Master Product List',
+      },
+      {
+        page: 'product-local-price',
+        title: 'Price Management',
+      },
+      {
+        page: 'product-local-settings',
+        title: 'Product Settings',
+      },
+    ],
+  },
+  {
+    title: 'Orders',
+    icon: 'shopping-cart',
+    items: [
+      {
+        page: 'order-local',
+        title: 'Order List',
+      },
+    ],
+  },
+  {
+    title: 'Channel Product',
+    icon: 'list',
+    items: [
+      // {
+      //   page: 'product-shopee',
+      //   title: 'Shopee',
+      // },
+    ],
+  },
+  {
+    title: 'Stock',
+    icon: 'package',
+    items: [
+      {
+        page: 'stock-local',
+        title: 'Stock List',
+      },
+    ],
+  },
+  {
+    title: 'Integration',
+    icon: 'link',
+    items: [
+      {
+        page: 'integrations',
+        title: 'Store List',
+      },
+      {
+        page: '/auth-channel',
+        title: 'Add Integrations',
+      },
+    ],
+  },
+];
+
 const Header = ({ setHeaderOpen, headerOpen }) => {
   const location = useLocation();
+  // const navigate = useNavigate();
+  // const [channelProductTypes, setChannelProductTypes] = useState([]);
+  const { user, setUser } = useUserContext();
 
   const [openProfileDropdown, setOpenProfileDropdown] = useState(false);
-  const [currPage, setCurrPage] = useState('');
   const [activeDropdown, setActiveDropdown] = useState(null);
+  const [currPage, setCurrPage] = useState('');
 
-  const dropdownMenu = [
-    {
-      title: 'Master Product',
-      icon: 'shopping-bag',
-      items: [
-        {
-          page: 'product-local',
-          title: 'Master Product List',
-        },
-        {
-          page: 'product-local-price',
-          title: 'Price Management',
-        },
-        {
-          page: 'product-local-settings',
-          title: 'Product Settings',
-        },
-      ],
-    },
-    {
-      title: 'Orders',
-      icon: 'shopping-cart',
-      items: [
-        {
-          page: 'order-local',
-          title: 'Order List',
-        },
-      ],
-    },
-    {
-      title: 'Channel Product',
-      icon: 'list',
-      items: [
-        {
-          page: 'product-shopee',
-          title: 'Shopee',
-        },
-      ],
-    },
-    {
-      title: 'Stock',
-      icon: 'package',
-      items: [
-        {
-          page: 'stock-local',
-          title: 'Stock List',
-        },
-      ],
-    },
-    {
-      title: 'Integration',
-      icon: 'link',
-      items: [
-        {
-          page: 'integrations',
-          title: 'Store List',
-        },
-        {
-          page: 'integrate',
-          title: 'Add Integrations',
-        },
-      ],
-    },
-  ];
+  useEffect(() => {
+    (async function () {
+      try {
+        const { data } = await masterApi.get('/products/types');
+        const channelProductIndex = dropdownMenu.findIndex(
+          el => el.title === 'Channel Product'
+        );
+
+        const itemsObjects = data.data.types.map(type => {
+          return {
+            page: `product-${type}`,
+            title: type.slice(0, 1).toUpperCase() + type.slice(1),
+          };
+        });
+
+        dropdownMenu[channelProductIndex].items = itemsObjects;
+      } catch (err) {
+        console.log(err);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     window.scrollTo(0, 0);
 
     const pathArr = location.pathname.split('/');
     setCurrPage(pathArr[pathArr.length - 1]);
-  }, [location]);
+  }, [location, user]);
 
   const dropdownMarkup = dropdownMenu.map((el, i) => {
     const open = activeDropdown === i ? true : false;
@@ -103,9 +133,57 @@ const Header = ({ setHeaderOpen, headerOpen }) => {
     );
   });
 
-  const signout = () => {
-    console.log('signout');
+  const logout = async () => {
+    // Optimistic approach
+    setUser(undefined);
+    await masterApi.delete('/users/logout');
   };
+
+  const logoutPopup = (
+    <Popup
+      trigger={
+        <button className="dropdown-item">
+          <div className="d-flex align-items-center">
+            <i className="font-size-lg me-2 feather icon-power"></i>
+            <span>Sign Out</span>
+          </div>
+        </button>
+      }
+      modal
+      contentStyle={{
+        borderRadius: '0.5rem',
+        display: 'flex',
+        width: 'min(30rem, 90vw',
+        flexDirection: 'column',
+        justifyContent: 'space-around',
+        minHeight: '13rem',
+        padding: '2rem',
+      }}
+    >
+      {close => (
+        <>
+          <h3 style={{ textAlign: 'center' }}>
+            Are you sure you want to Logout?
+          </h3>
+          <div
+            style={{
+              margin: '0 auto',
+              width: '70%',
+              display: 'flex',
+              justifyContent: 'space-between',
+            }}
+          >
+            <button className="btn btn-success" onClick={close}>
+              Cancel
+            </button>
+            <button className="btn btn-danger" onClick={logout}>
+              Logout
+            </button>
+          </div>
+        </>
+      )}
+    </Popup>
+  );
 
   return (
     <React.Fragment>
@@ -114,6 +192,7 @@ const Header = ({ setHeaderOpen, headerOpen }) => {
         className={`side-nav vertical-menu nav-menu-light scrollable ${
           !headerOpen ? 'nav-menu-collapse' : 'is-opened'
         }`}
+        style={{ zIndex: 98 }}
       >
         <div className="nav-logo">
           <Link to="/erp" className="w-100 logo">
@@ -144,26 +223,7 @@ const Header = ({ setHeaderOpen, headerOpen }) => {
             </Link>
           </li>
 
-          <li className="nav-group-title">APPS</li>
-
-          {/* <li className="nav-menu-item">
-            <a href="v-mail.html">
-              <i className="feather icon-mail"></i>
-              <span className="nav-menu-item-title">Mail</span>
-            </a>
-          </li>
-          <li className="nav-menu-item">
-            <a href="v-chat.html">
-              <i className="feather icon-message-circle"></i>
-              <span className="nav-menu-item-title">Chat</span>
-            </a>
-          </li>
-          <li className="nav-menu-item">
-            <a href="v-calendar.html">
-              <i className="feather icon-calendar"></i>
-              <span className="nav-menu-item-title">Calendar</span>
-            </a>
-          </li> */}
+          {/* <li className="nav-group-title">APPS</li> */}
 
           {dropdownMarkup}
         </ul>
@@ -175,6 +235,7 @@ const Header = ({ setHeaderOpen, headerOpen }) => {
         className={`header-text-dark header-nav layout-vertical ${
           !headerOpen ? 'is-collapse' : ''
         }`}
+        style={{ zIndex: 99 }}
       >
         <div className="header-nav-wrap">
           <div className="header-nav-left">
@@ -192,7 +253,7 @@ const Header = ({ setHeaderOpen, headerOpen }) => {
             </div>
             <div
               className="header-nav-item mobile-toggle"
-              onClick={() => setHeaderOpen(true)}
+              onClick={() => setHeaderOpen(!headerOpen)}
             >
               <div className="header-nav-item-select cursor-pointer">
                 <i
@@ -353,77 +414,73 @@ const Header = ({ setHeaderOpen, headerOpen }) => {
                 </div>
               </div>
             </div>
-            <div className="header-nav-item">
-              <div
-                className="dropdown header-nav-item-select nav-profile"
-                onClick={() => setOpenProfileDropdown(!openProfileDropdown)}
-                onMouseEnter={() => setOpenProfileDropdown(true)}
-                onMouseLeave={() => setOpenProfileDropdown(false)}
-              >
-                <div className="toggle-wrapper" id="nav-profile-dropdown">
-                  <div
-                    className="avatar avatar-circle avatar-image"
-                    style={{
-                      width: '28px',
-                      height: '28px',
-                      lineHeight: '28px',
-                    }}
-                  >
-                    <img src={avatar} alt="" />
-                  </div>
-                  <span className="fw-bold mx-1">SM Ali Hassan</span>
-                  <i
-                    className={`feather icon-chevron-${
-                      openProfileDropdown ? 'up' : 'down'
-                    }`}
-                  ></i>
-                </div>
+
+            {user ? (
+              <div className="header-nav-item">
                 <div
-                  className={`dropdown-menu dropdown-menu ${
-                    openProfileDropdown ? 'show' : ''
-                  }`}
-                  style={{ transform: 'translateX(-31%)' }}
+                  className="dropdown header-nav-item-select nav-profile"
+                  tabIndex={0}
+                  onBlur={() => setOpenProfileDropdown(false)}
+                  onFocus={() => setOpenProfileDropdown(true)}
                 >
-                  <div className="nav-profile-header disable">
-                    <div className="d-flex align-items-center">
-                      <div className="avatar avatar-circle avatar-image">
-                        <img src={avatar} alt="" />
-                      </div>
-                      <div className="d-flex flex-column ms-1">
-                        <span className="fw-bold text-dark">SM Ali Hassan</span>
-                        <span className="font-size-sm">
-                          syedalihassan6651@gmail.com
-                        </span>
-                      </div>
+                  <div className="toggle-wrapper" id="nav-profile-dropdown">
+                    <div
+                      className="avatar avatar-circle avatar-image"
+                      style={{
+                        width: '37px',
+                        height: '37px',
+                        lineHeight: '37px',
+                      }}
+                    >
+                      <img src={avatar} alt="avatar" />
                     </div>
+                    <span className="fw-bold mx-1" style={{ fontSize: '1rem' }}>
+                      {user.name}
+                    </span>
+                    <i
+                      className={`feather icon-chevron-${
+                        openProfileDropdown ? 'up' : 'down'
+                      }`}
+                    ></i>
                   </div>
-                  <button className="dropdown-item">
-                    <div className="d-flex align-items-center">
-                      <i className="font-size-lg me-2 feather icon-user"></i>
-                      <span>Profile</span>
+                  <div
+                    className={`dropdown-menu dropdown-menu ${
+                      openProfileDropdown ? 'show' : ''
+                    }`}
+                    style={{ transform: 'translateX(-31%)' }}
+                  >
+                    <div className="nav-profile-header disable">
+                      <div className="d-flex align-items-center">
+                        <div className="avatar avatar-circle avatar-image">
+                          <img src={avatar} alt="" />
+                        </div>
+                        <div className="d-flex flex-column ms-1">
+                          <span className="fw-bold text-dark">{user.name}</span>
+                          <span className="font-size-sm">{user.email}</span>
+                        </div>
+                      </div>
                     </div>
-                  </button>
-                  <button className="dropdown-item">
-                    <div className="d-flex align-items-center">
-                      <i className="font-size-lg me-2 feather icon-settings"></i>
-                      <span>Settings</span>
-                    </div>
-                  </button>
-                  <button className="dropdown-item">
-                    <div className="d-flex align-items-center">
-                      <i className="font-size-lg me-2 feather icon-life-buoy"></i>
-                      <span>Support</span>
-                    </div>
-                  </button>
-                  <button className="dropdown-item" onClick={signout}>
-                    <div className="d-flex align-items-center">
-                      <i className="font-size-lg me-2 feather icon-power"></i>
-                      <span>Sign Out</span>
-                    </div>
-                  </button>
+                    <Link to="/profile" className="dropdown-item">
+                      <div className="d-flex align-items-center">
+                        <i className="font-size-lg me-2 feather icon-user"></i>
+                        <span>Profile</span>
+                      </div>
+                    </Link>
+                    <Link to="/support" className="dropdown-item">
+                      <div className="d-flex align-items-center">
+                        <i className="font-size-lg me-2 feather icon-life-buoy"></i>
+                        <span>Support</span>
+                      </div>
+                    </Link>
+                    {logoutPopup}
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="header-nav-item">
+                <Loader classes="loader--sm" />
+              </div>
+            )}
           </div>
         </div>
       </nav>

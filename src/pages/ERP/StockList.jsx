@@ -13,11 +13,11 @@ const StockList = () => {
   ];
 
   return (
-    <div class="card">
-      <div class="card-body">
+    <div className="card">
+      <div className="card-body">
         <h4>Master Product List</h4>
 
-        <div class="mt-4">
+        <div className="mt-4">
           <ReactDataGrid idProperty="id" columns={columns} dataSource={[]} />
         </div>
       </div>

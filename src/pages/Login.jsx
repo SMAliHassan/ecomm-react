@@ -1,19 +1,53 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
+import { useUserContext } from '../contexts/userContext';
+import masterApi from '../apis/masterApi';
 import FormInput from '../components/FormInput';
 import backgroundLight from '../assets/images/others/bg-light.jpg';
 import logoWhite from '../assets/images/logo/logo-white.png';
 
 const Login = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { setUser } = useUserContext();
+
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
   const [loginStatus, setLoginStatus] = useState('');
   const [error, setError] = useState('');
 
-  const handleLoginSubmit = e => {
+  const login = async () => {
+    if (!email || !password)
+      return toast.error('Please provide email and password.');
+
+    try {
+      setLoginStatus('loading');
+
+      const { data } = await masterApi.post('/users/login', {
+        // await masterApi.post('/users/login', {
+        email,
+        password,
+      });
+
+      setUser(data.data.user);
+      setLoginStatus('loggedIn');
+
+      toast.success('Logged in successfully!');
+      const redirectTo = searchParams.get('redirectTo') || '/';
+      navigate(redirectTo, { replace: true });
+    } catch (err) {
+      console.log(err);
+      setLoginStatus('error');
+
+      toast.error(err.response.data.message);
+    }
+  };
+
+  const handleLoginSubmit = async e => {
     e.preventDefault();
-    console.log(e);
+    await login();
   };
 
   return (
