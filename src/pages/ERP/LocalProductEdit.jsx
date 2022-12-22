@@ -279,7 +279,12 @@ const LocalProductEdit = () => {
                       }}
                     ></i>
                   </a>
-                  <img src={img} alt="product" style={{ width: '6.5rem' }} />
+                  <img
+                    crossOrigin="Anonymous"
+                    src={img}
+                    alt="product"
+                    style={{ width: '6.5rem' }}
+                  />
                 </div>
               ))}
             </div>

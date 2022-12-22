@@ -79,7 +79,7 @@ const LocalProductNew = () => {
             'https://erp.ginee.com/erp/webpack/assets/no-product-icon-8edd1a7b028b1e4097c2..png'
           }
           alt={'product-img'}
-          style={{ height: '4.5rem' }}
+          style={{ width: '6rem' }}
         />
         <span>{rowData.name}</span>
       </div>
@@ -183,12 +183,7 @@ const LocalProductNew = () => {
           Edit
         </Link>
 
-        {/* <button
-          className="btn btn-link btn-slim text-start link-primary"
-          // onClick={pullData}
-        >
-          Publish to Store
-        </button> */}
+        {<PublishProductPopup productId={rowData._id} />}
 
         {<DeletePopup productId={rowData._id} />}
       </div>
@@ -545,6 +540,121 @@ const LocalProductNew = () => {
             </button>
           </div>
         </div>
+      </Popup>
+    );
+  };
+
+  const PublishProductPopup = ({ productId }) => {
+    const [selectedStore, setSelectedStore] = useState('noValue');
+
+    return (
+      <Popup
+        modal
+        contentStyle={{
+          borderRadius: '0.5rem',
+          padding: 0,
+          width: 'min(36rem, 92vw)',
+        }}
+        trigger={
+          <button className="btn btn-link btn-slim text-start link-primary">
+            Publish to Store
+          </button>
+        }
+      >
+        {close => (
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                color: '#333',
+                borderBottom: '1px solid #cccccc',
+                padding: '1rem',
+                fontSize: '1rem',
+              }}
+            >
+              <p className="m-0">Choose destination store</p>
+              <i
+                className="la la-close la-lg cursor-pointer"
+                onClick={close}
+              ></i>
+            </div>
+
+            <form
+              style={{ color: '#333', padding: '0 1rem 1rem 1rem' }}
+              onSubmit={e => {
+                e.preventDefault();
+
+                if (selectedStore === 'noValue')
+                  return toast.error('Please select a store.');
+
+                navigate(
+                  `/erp/product-local-publish/${productId}?storeId=${selectedStore}`
+                );
+
+                close();
+              }}
+            >
+              {/* Store */}
+              <div style={{ marginBottom: '0.9rem', marginTop: '1rem' }}>
+                <label
+                  htmlFor="store"
+                  style={{ display: 'block', lineHeight: 2 }}
+                >
+                  Store Name
+                </label>
+
+                <select
+                  value={selectedStore}
+                  onChange={e => setSelectedStore(e.target.value)}
+                  name="store"
+                  className="form-select form-select-sm cursor-pointer"
+                  style={{ fontSize: '0.9rem' }}
+                >
+                  <option
+                    className="dropdown-item"
+                    value={'noValue'}
+                    disabled
+                  ></option>
+                  {stores.map(el => (
+                    <option className="dropdown-item" value={el.id} key={el.id}>
+                      {el.storeNameNew}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div
+                style={{
+                  marginTop: '2.5rem',
+                  marginLeft: 'auto',
+                  display: 'flex',
+                  flexDirection: 'row-reverse',
+                  gap: '1rem',
+                }}
+              >
+                <button
+                  className={`btn btn-primary ${
+                    selectedStore === 'noValue' ? 'disabled' : ''
+                  }`}
+                  type="submit"
+                  disabled={selectedStore === 'noValue'}
+                >
+                  Next Step
+                </button>
+
+                <button
+                  className="btn btn-secondary"
+                  type="none"
+                  onClick={close}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
       </Popup>
     );
   };

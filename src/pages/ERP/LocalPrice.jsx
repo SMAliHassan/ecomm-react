@@ -7,19 +7,20 @@ import { toast } from 'react-toastify';
 import masterApi from '../../apis/masterApi';
 import LoaderErp from './LoaderErp';
 
-import shopeeLogo from '../../assets/images/logo/shopee.svg';
-import lazadaLogo from '../../assets/images/logo/lazada.svg';
-import tokopediaLogo from '../../assets/images/logo/tokopedia.svg';
-import blibliLogo from '../../assets/images/logo/blibli.svg';
-import shopifyLogo from '../../assets/images/logo/shopify.svg';
+// import shopeeLogo from '../../assets/images/logo/shopee.svg';
+// import lazadaLogo from '../../assets/images/logo/lazada.svg';
+// import tokopediaLogo from '../../assets/images/logo/tokopedia.svg';
+// import blibliLogo from '../../assets/images/logo/blibli.svg';
+// import shopifyLogo from '../../assets/images/logo/shopify.svg';
+import tokopediaSmall from '../../assets/images/logo/small/tokopedia.svg';
 
-const logos = {
-  shopee: shopeeLogo,
-  lazada: lazadaLogo,
-  blibli: blibliLogo,
-  shopify: shopifyLogo,
-  tokopedia: tokopediaLogo,
-};
+// const logos = {
+//   shopee: shopeeLogo,
+//   lazada: lazadaLogo,
+//   blibli: blibliLogo,
+//   shopify: shopifyLogo,
+//   tokopedia: tokopediaLogo,
+// };
 
 const LocalPrice = () => {
   const [pageStatus, setPageStatus] = useState('loading');
@@ -316,8 +317,8 @@ const LocalPrice = () => {
         }}
       >
         <img
-          crossOrigin="Anonymous"
-          src="https://erp.ginee.com/erp/images/icon-channel-round/tokopedia.svg"
+          // crossOrigin="Anonymous"
+          src={tokopediaSmall}
           alt={bindedStore.storeType}
           style={{ width: '2rem' }}
         />

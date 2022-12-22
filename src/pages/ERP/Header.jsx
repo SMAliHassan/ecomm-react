@@ -24,10 +24,10 @@ const dropdownMenu = [
         page: 'product-local-price',
         title: 'Price Management',
       },
-      {
-        page: 'product-local-settings',
-        title: 'Product Settings',
-      },
+      // {
+      //   page: 'product-local-settings',
+      //   title: 'Product Settings',
+      // },
     ],
   },
   {

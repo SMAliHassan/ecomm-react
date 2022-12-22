@@ -1,13 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { TreeSelect } from 'primereact/treeselect';
 
 import masterApi from '../../apis/masterApi';
+import LoaderErp from './LoaderErp';
 
-const LocalProductCreate = () => {
+const LocalProductPublish = () => {
   const navigate = useNavigate();
+  const { productId } = useParams();
+  const [searchParams] = useSearchParams();
 
-  const [updateStatus, setUpdateStatus] = useState();
+  const [pageStatus, setPageStatus] = useState();
+  const [publishStatus, setPublishStatus] = useState();
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState();
   const [name, setName] = useState('');
   const [price, setPrice] = useState();
   const [condition, setCondition] = useState();
@@ -18,27 +30,90 @@ const LocalProductCreate = () => {
   const [width, setWidth] = useState();
   const [weight, setWeight] = useState();
   const [newImage, setNewImage] = useState();
+  const [status, setStatus] = useState();
+  const [minOrder, setMinOrder] = useState();
+  const [stock, setStock] = useState();
 
-  const createProduct = async () => {
+  useEffect(() => {
+    const getProduct = async () => {
+      const { data } = await masterApi.get(`/masterProducts/${productId}`);
+
+      setName(data.data.product.name);
+      setCondition(data.data.product.condition);
+      setDescription(data.data.product.description);
+      setImages(data.data.product.images);
+      setHeight(data.data.product.volume.height);
+      setLength(data.data.product.volume.length);
+      setWidth(data.data.product.volume.width);
+      setPrice(data.data.product.masterPrice);
+      setWeight(data.data.product.weight);
+    };
+
+    const getStoreAndCategories = async () => {
+      const { data } = await masterApi.get(
+        `/stores/${searchParams.get('storeId')}`
+      );
+      const store = data.data.store;
+
+      const categoryResp = await masterApi.get(
+        `/stores/categories/${store.storeType}`
+      );
+
+      const remodelCategories = categs =>
+        categs.map(categ => {
+          return {
+            key: categ.id,
+            label: categ.name,
+            style: {
+              fontSize: '0.8rem',
+              width: '12rem',
+              padding: '0',
+            },
+            children: categ.child ? remodelCategories(categ.child) : undefined,
+          };
+        });
+
+      setCategories(remodelCategories(categoryResp.data.data.categories));
+    };
+
+    (async function () {
+      setPageStatus('loading');
+
+      await Promise.all([await getProduct(), await getStoreAndCategories()]);
+
+      setPageStatus('');
+    })();
+  }, [productId, searchParams]);
+
+  const publishProduct = async () => {
     try {
-      setUpdateStatus('loading');
+      setPublishStatus('loading');
 
-      const data = {
+      const productData = {
         name,
-        masterPrice: price,
+        category_id: selectedCategory,
+        price_currency: 'IDR',
+        price,
+        status,
+        min_order: minOrder,
+        weight,
+        weight_unit: 'GR',
         condition,
         description,
-        images,
-        volume: { height, length, width },
-        weight,
+        stock,
+        pictures: images,
+        dimension: { height, length, width },
       };
 
-      await masterApi.post(`/masterProducts`, data);
-      setUpdateStatus('');
-      toast.success('Product created successfully!');
+      await masterApi.post(`/masterProducts/${productId}/publish`, {
+        productData,
+        storeId: searchParams.get('storeId'),
+      });
+      setPublishStatus('');
+      toast.success('Product publish to the store successfully!');
       navigate('/erp/product-local');
     } catch ({ response }) {
-      setUpdateStatus('error');
+      setPublishStatus('error');
 
       if (response && response.data && response.data.message)
         return toast.error(response.data.message);
@@ -47,18 +122,20 @@ const LocalProductCreate = () => {
     }
   };
 
+  if (pageStatus === 'loading') return <LoaderErp />;
+
   return (
     <div className="card">
       <div className="card-body">
-        <h4 style={{ marginBottom: '1rem' }}>Create Master Product</h4>
+        <h4 style={{ marginBottom: '1rem' }}>Publish to the Store</h4>
 
         <form
           onSubmit={e => {
             e.preventDefault();
-            createProduct();
+            publishProduct();
           }}
         >
-          <div style={{ marginTop: '1.2rem' }}>
+          <div style={{ marginTop: '1.4rem' }}>
             <label
               htmlFor="name"
               style={{
@@ -68,10 +145,10 @@ const LocalProductCreate = () => {
                 marginBottom: '3px',
               }}
             >
-              Master Product Name
+              Product Name
             </label>
             <input
-              maxLength={250}
+              maxLength={70}
               style={{
                 width: 'min(38rem, 100%)',
                 padding: '4px 6px',
@@ -83,7 +160,7 @@ const LocalProductCreate = () => {
             />
           </div>
 
-          <div style={{ marginTop: '1.2rem' }}>
+          <div style={{ marginTop: '1.4rem' }}>
             <label
               htmlFor="condition"
               style={{
@@ -125,7 +202,56 @@ const LocalProductCreate = () => {
             </div>
           </div>
 
-          <div style={{ marginTop: '1.2rem' }}>
+          <div style={{ marginTop: '1.4rem' }}>
+            <label
+              htmlFor="category"
+              style={{
+                display: 'block',
+                lineHeight: 2,
+                fontSize: '1rem',
+                marginBottom: '3px',
+              }}
+            >
+              Category
+            </label>
+
+            <TreeSelect
+              value={selectedCategory}
+              options={categories}
+              style={{ height: '2rem', fontSize: '0.95rem', padding: '0' }}
+              onChange={e => setSelectedCategory(e.value)}
+            />
+          </div>
+
+          <div style={{ marginTop: '1.4rem' }}>
+            <label
+              htmlFor="status"
+              style={{
+                display: 'block',
+                lineHeight: 2,
+                fontSize: '1rem',
+                marginBottom: '3px',
+              }}
+            >
+              Status
+            </label>
+
+            <select
+              value={status}
+              onChange={e => setStatus(e.target.value)}
+              name="store"
+              className="form-select form-select-sm cursor-pointer"
+              style={{ fontSize: '0.9rem', width: 'min(38rem, 100%)' }}
+            >
+              {['UNLIMITED', 'LIMITED', 'EMPTY'].map(el => (
+                <option className="dropdown-item" value={el} key={el}>
+                  {el}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ marginTop: '1.4rem' }}>
             <label
               htmlFor="description"
               style={{
@@ -151,7 +277,7 @@ const LocalProductCreate = () => {
             ></textarea>
           </div>
 
-          <div style={{ marginTop: '1.2rem' }}>
+          <div style={{ marginTop: '1.4rem' }}>
             <label
               htmlFor="price"
               style={{
@@ -164,11 +290,12 @@ const LocalProductCreate = () => {
               Price
             </label>
             <input
+              required
               value={price}
               onChange={e => setPrice(e.target.value)}
               name="price"
               type="number"
-              max={100_000_000}
+              max={100_000_000_000}
               min={0}
               style={{
                 width: 'min(38rem, 100%)',
@@ -177,7 +304,60 @@ const LocalProductCreate = () => {
             />
           </div>
 
-          <div style={{ marginTop: '1.2rem' }}>
+          <div style={{ marginTop: '1.4rem' }}>
+            <label
+              htmlFor="stock"
+              style={{
+                display: 'block',
+                lineHeight: 2,
+                fontSize: '1rem',
+                marginBottom: '3px',
+              }}
+            >
+              stock
+            </label>
+            <input
+              required
+              value={stock}
+              onChange={e => setStock(e.target.value)}
+              name="stock"
+              type="number"
+              max={10000}
+              min={1}
+              style={{
+                width: 'min(38rem, 100%)',
+                padding: '4px 6px',
+              }}
+            />
+          </div>
+
+          <div style={{ marginTop: '1.4rem' }}>
+            <label
+              htmlFor="minOrder"
+              style={{
+                display: 'block',
+                lineHeight: 2,
+                fontSize: '1rem',
+                marginBottom: '3px',
+              }}
+            >
+              minOrder
+            </label>
+            <input
+              value={minOrder}
+              onChange={e => setMinOrder(e.target.value)}
+              name="minOrder"
+              type="number"
+              max={1000}
+              min={1}
+              style={{
+                width: 'min(38rem, 100%)',
+                padding: '4px 6px',
+              }}
+            />
+          </div>
+
+          <div style={{ marginTop: '1.4rem' }}>
             <label
               htmlFor="images"
               style={{
@@ -349,6 +529,7 @@ const LocalProductCreate = () => {
                 Weight (gm)
               </label>
               <input
+                required
                 type="number"
                 min={1}
                 max={10000000}
@@ -375,24 +556,27 @@ const LocalProductCreate = () => {
 
             <button
               className={`btn btn-primary ${
-                updateStatus === 'loading' ? 'disabled' : ''
+                publishStatus === 'loading' ? 'disabled' : ''
               }`}
               type="submit"
-              disabled={updateStatus === 'loading'}
+              disabled={publishStatus === 'loading'}
             >
-              {updateStatus === 'loading' ? (
+              {publishStatus === 'loading' ? (
                 <span
                   className="spinner-border spinner-border-sm mx-2"
                   style={{ color: 'var(--bs-white)' }}
                 ></span>
               ) : null}
-              Create Master Product
+              Publish to Store
             </button>
           </div>
         </form>
       </div>
+      <style>
+        {'.p-treeselect-label { padding: 0.3rem 0.5rem !important; }'}
+      </style>
     </div>
   );
 };
 
-export default LocalProductCreate;
+export default LocalProductPublish;

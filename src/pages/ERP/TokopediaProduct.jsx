@@ -64,13 +64,13 @@ const TokopediaProduct = () => {
       >
         <img
           crossOrigin="Anonymous"
-          src={rowData.productData.pictures[0].ThumbnailURL}
+          src={rowData.images[0]}
           alt={rowData.name}
           style={{ height: '5rem', fontSize: '4px' }}
         />
         <div>
           <a
-            href={rowData.productData.other.url}
+            href={rowData.url}
             target="_blank"
             rel="noreferrer"
             className="my-1 text-primary d-block"
@@ -220,10 +220,8 @@ const TokopediaProduct = () => {
 
           <Column
             // body={rowData => (rowData.channelSKU ? rowData.channelSKU : '---')}
-            body={({ productData }) => (
-              <span style={{ fontSize: '0.9rem' }}>
-                {productData.other.sku}
-              </span>
+            body={({ channelSku }) => (
+              <span style={{ fontSize: '0.9rem' }}>{channelSku}</span>
             )}
             header="Channel SKU"
           ></Column>

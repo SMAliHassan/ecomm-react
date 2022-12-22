@@ -15,6 +15,7 @@ import LoaderErp from './LoaderErp';
 // import AuthChannel from '../AuthChannel';
 import TokopediaProduct from './TokopediaProduct';
 import LocalProductCreate from './LocalProductCreate';
+import LocalProductPublish from './LocalProductPublish';
 
 const ERP = () => {
   const navigate = useNavigate();
@@ -50,6 +51,10 @@ const ERP = () => {
                 <Route
                   path="product-local-add"
                   element={<LocalProductCreate />}
+                />
+                <Route
+                  path="product-local-publish/:productId"
+                  element={<LocalProductPublish />}
                 />
                 <Route path="product-local-price" element={<LocalPrice />} />
                 <Route path="integrations" element={<StoreList />} />
